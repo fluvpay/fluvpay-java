@@ -1,21 +1,16 @@
 # FluvPay SDK para Java
 
-SDK oficial da FluvPay para Java. Cobranças PIX, saques, transferências internas
-e verificação de webhooks, com tipagem forte e zero dependência de runtime
-pesada (usa o `java.net.http.HttpClient` nativo do JDK e Jackson para JSON).
+SDK oficial da FluvPay para Java. Oferece acesso tipado a cobranças PIX, saques, transferências internas, extrato e verificação de webhooks. A biblioteca usa o `java.net.http.HttpClient` nativo do JDK e Jackson para serialização JSON, sem dependências de runtime pesadas. A interface é projetada para integrações humanas e para agentes de IA que consomem a documentação para integrar.
 
 ## Instalação
 
-Requisitos: Java 11 ou superior e Maven 3.6+.
+Requisitos: Java 11 ou superior e Maven 3.6 ou superior.
 
-### Hoje: via JitPack (a partir do código no GitHub)
+### Via JitPack
 
-Enquanto o SDK não está no Maven Central, o JitPack compila direto da tag do
-GitHub. Adicione o repositório do JitPack e a dependência. Note que a coordenada
-do JitPack deriva do repositório (`groupId` `com.github.fluvpay`, `artifactId`
-`fluvpay-java`), diferente da coordenada final do Maven Central.
+O JitPack compila o SDK diretamente a partir de uma tag do GitHub. A coordenada do JitPack deriva do repositório (`groupId` `com.github.fluvpay`, `artifactId` `fluvpay-java`) e difere da coordenada definitiva do Maven Central.
 
-Maven (no seu `pom.xml`):
+Maven (`pom.xml`):
 
 ```xml
 <repositories>
@@ -60,14 +55,11 @@ dependencies {
 }
 ```
 
-A tag `v1.0.0` precisa existir no repositório para o JitPack compilar. Antes de a
-tag ser publicada, dá para apontar para o último commit da branch principal
-trocando a versão por `main-SNAPSHOT` (JitPack compila o HEAD da branch sob
-demanda).
+A tag `v1.0.0` precisa existir no repositório para o JitPack compilar. Antes da publicação da tag, a versão `main-SNAPSHOT` aponta para o HEAD da branch principal, que o JitPack compila sob demanda.
 
-### Instalar a partir do código-fonte (sem registry, funciona agora)
+### A partir do código-fonte
 
-Clonar o repositório e instalar no seu repositório Maven local (`~/.m2`):
+A instalação a partir do código-fonte publica o artefato no repositório Maven local (`~/.m2`), sem depender de registry:
 
 ```bash
 git clone https://github.com/fluvpay/fluvpay-java.git
@@ -75,8 +67,7 @@ cd fluvpay-java
 mvn -q install -DskipTests
 ```
 
-Isso publica o artefato localmente sob a coordenada `com.fluvpay:fluvpay:1.0.0`,
-que então pode ser declarada normalmente em qualquer projeto da mesma máquina:
+O artefato local fica disponível sob a coordenada `com.fluvpay:fluvpay:1.0.0` e pode ser declarado em qualquer projeto da mesma máquina:
 
 ```xml
 <dependency>
@@ -86,13 +77,11 @@ que então pode ser declarada normalmente em qualquer projeto da mesma máquina:
 </dependency>
 ```
 
-### Em breve: Maven Central
+### Maven Central (em breve)
 
-Quando publicado no Maven Central, a coordenada final será `com.fluvpay:fluvpay`
-(sem o repositório extra do JitPack):
+A coordenada definitiva no Maven Central será `com.fluvpay:fluvpay`, sem o repositório adicional do JitPack:
 
 ```xml
-<!-- em breve, quando publicado no Maven Central -->
 <dependency>
   <groupId>com.fluvpay</groupId>
   <artifactId>fluvpay</artifactId>
@@ -100,11 +89,9 @@ Quando publicado no Maven Central, a coordenada final será `com.fluvpay:fluvpay
 </dependency>
 ```
 
-## Configuração
+## Inicio rápido
 
-A API Key define o modo de operação pelo prefixo: `fluv_live_` para produção e
-`fluv_test_` para o sandbox. Você só precisa passar a chave; o SDK cuida do
-resto.
+O cliente é construído por um builder. A API Key é o único parâmetro obrigatório. Os demais parâmetros têm valores padrão.
 
 ```java
 import com.fluvpay.FluvPay;
@@ -116,14 +103,16 @@ FluvPay fluvpay = FluvPay.builder()
     // .maxRetries(2)                              // padrão (0 desliga)
     .build();
 
-System.out.println(fluvpay.isTestKey()); // true se a chave for fluv_test_
+System.out.println(fluvpay.isTestKey()); // true quando a chave usa o prefixo fluv_test_
 ```
 
-## Criar uma cobrança PIX
+## Autenticação
 
-A criação de cobrança aceita apenas os campos do contrato. Não envie `currency`
-nem `method`: a moeda e o método (PIX) são implícitos, e a API rejeita campos
-extras com erro de validação.
+A autenticação usa a API Key enviada pelo SDK no header de autorização. O ambiente é determinado pelo prefixo da chave: `fluv_live_` seleciona produção e `fluv_test_` seleciona o sandbox. O método `isTestKey()` reporta o ambiente em uso.
+
+## Cobranças PIX
+
+A criação de cobrança aceita apenas os campos do contrato. Os campos `currency` e `method` não devem ser enviados: a moeda e o método (PIX) são implícitos, e campos extras resultam em erro de validação.
 
 ```java
 import com.fluvpay.models.Charge;
@@ -144,9 +133,7 @@ System.out.println(charge.getPixCopyPaste());  // código copia-e-cola
 System.out.println(charge.getPixQrCode());     // imagem do QR em base64
 ```
 
-A `Idempotency-Key` é gerada automaticamente (UUIDv4) se você não informar uma.
-Para controlar a chave (por exemplo, reusar entre tentativas do seu lado), passe
-no segundo argumento:
+A `Idempotency-Key` é gerada automaticamente (UUIDv4) quando não informada. Para definir a chave de forma explícita, passe o valor no segundo argumento:
 
 ```java
 Charge charge = fluvpay.charges().create(
@@ -154,7 +141,9 @@ Charge charge = fluvpay.charges().create(
     "pedido-1042-tentativa-1");
 ```
 
-## Recuperar e listar
+### Recuperar e listar cobranças
+
+A listagem de cobranças usa paginação por `page` e `per_page`.
 
 ```java
 import com.fluvpay.FluvPay;
@@ -178,7 +167,7 @@ System.out.println(page.getHasNext());  // paginação por page/per_page
 
 ## Saques e transferências internas
 
-Estas operações são live-only: chaves `fluv_test_` recebem 403.
+Saques e transferências internas são operações live-only. Chaves `fluv_test_` recebem 403. A listagem de saques usa paginação por `limit` e `offset`.
 
 ```java
 import com.fluvpay.FluvPay;
@@ -205,7 +194,9 @@ InternalTransfer transfer = fluvpay.internalTransfers().create(new InternalTrans
     .recipientEmail("destino@exemplo.com")); // ou recipientMerchantId
 ```
 
-## Extrato (transactions)
+## Extrato
+
+O extrato (transactions) usa paginação por `page` e `per_page`.
 
 ```java
 import com.fluvpay.FluvPay;
@@ -223,7 +214,7 @@ Transaction tx = fluvpay.transactions().retrieve("tx_...");
 
 ## Sandbox
 
-Disponível apenas com chave `fluv_test_`.
+Os recursos de sandbox estão disponíveis apenas com chave `fluv_test_`.
 
 ```java
 import com.fluvpay.models.SandboxScenarios;
@@ -233,12 +224,9 @@ SandboxScenarios scenarios = fluvpay.sandbox().scenarios();
 SandboxReset reset = fluvpay.sandbox().reset();
 ```
 
-## Verificação de webhooks
+## Webhooks
 
-A FluvPay assina cada entrega. Verifique a assinatura usando o corpo CRU da
-requisição (nunca re-serialize o JSON, pois isso muda os bytes e invalida a
-assinatura). O cálculo é `HMAC_SHA256(secret, timestamp + "." + rawBody)` em
-hexadecimal, e o header `X-FluvPay-Signature` vem no formato `v1=<hex>`.
+A FluvPay assina cada entrega de webhook. A verificação usa o corpo cru da requisição. Reserializar o JSON altera os bytes e invalida a assinatura. A assinatura é calculada como `HMAC_SHA256(secret, timestamp + "." + rawBody)` em hexadecimal, e o header `X-FluvPay-Signature` segue o formato `v1=<hex>`.
 
 ```java
 import com.fluvpay.FluvPay;
@@ -275,14 +263,22 @@ try {
 }
 ```
 
-Eventos disponíveis: `charge.created`, `charge.paid`, `charge.expired`,
-`charge.cancelled`, `charge.refunded`, `payout.created`, `payout.completed` e
-`payout.failed`.
+Eventos disponíveis:
 
-## Tratamento de erros
+| Evento | Descrição |
+|---|---|
+| `charge.created` | Cobrança criada |
+| `charge.paid` | Cobrança paga |
+| `charge.expired` | Cobrança expirada |
+| `charge.cancelled` | Cobrança cancelada |
+| `charge.refunded` | Cobrança estornada |
+| `payout.created` | Saque criado |
+| `payout.completed` | Saque concluído |
+| `payout.failed` | Saque falhou |
 
-Cada falha vira uma exceção tipada. Todas herdam de `FluvPayError` e carregam
-`code`, `message`, `details`, `traceId` e `statusCode`.
+## Erros
+
+Cada falha resulta em uma exceção tipada. Todas herdam de `FluvPayError` e expõem `code`, `message`, `details`, `traceId` e `statusCode`.
 
 ```java
 import com.fluvpay.FluvPayValidationError;
@@ -298,34 +294,38 @@ try {
 }
 ```
 
-Mapeamento: 400/422 para `FluvPayValidationError`, 401 para
-`FluvPayAuthenticationError`, 403 para `FluvPayPermissionError`, 404 para
-`FluvPayNotFoundError`, 409 para `FluvPayConflictError` (inclui
-`IDEMPOTENCY_CONFLICT`), 429 para `FluvPayRateLimitError` (lê `Retry-After`),
-5xx para `FluvPayServerError`, e falha de rede ou tempo limite para
-`FluvPayConnectionError`.
+Mapeamento de status HTTP para exceção:
+
+| Status | Exceção | Observação |
+|---|---|---|
+| 400, 422 | `FluvPayValidationError` | |
+| 401 | `FluvPayAuthenticationError` | |
+| 403 | `FluvPayPermissionError` | |
+| 404 | `FluvPayNotFoundError` | |
+| 409 | `FluvPayConflictError` | inclui `IDEMPOTENCY_CONFLICT` |
+| 429 | `FluvPayRateLimitError` | lê `Retry-After` |
+| 5xx | `FluvPayServerError` | |
+| falha de rede ou tempo limite | `FluvPayConnectionError` | |
 
 ## Retentativas
 
-O SDK retenta automaticamente (padrão 2 tentativas, backoff exponencial com
-jitter) apenas em situações seguras: requisições GET e POSTs que carregam
-`Idempotency-Key`, nos casos de 429 e 5xx ou falha de conexão. O header
-`Retry-After` é respeitado. Para desligar, use `maxRetries(0)` no builder.
+O SDK retenta requisições automaticamente (padrão de 2 tentativas, backoff exponencial com jitter) apenas em situações seguras: requisições GET e POSTs que carregam `Idempotency-Key`, nos casos de 429, 5xx ou falha de conexão. O header `Retry-After` é respeitado. A retentativa é desativada com `maxRetries(0)` no builder.
 
 ## Desenvolvimento
+
+A suíte de testes cobre testes unitários e de webhook, sem acesso a rede:
 
 ```bash
 mvn -q test   # unit + webhook (sem rede)
 ```
 
-Com Docker, sem instalar a toolchain localmente:
+A suíte também roda em container, sem instalação local da toolchain:
 
 ```bash
 docker run --rm -v "$PWD":/app -w /app maven:3.9-eclipse-temurin-17 mvn -q test
 ```
 
-O smoke no sandbox roda somente se a variável `FLUVPAY_TEST_KEY` (prefixo
-`fluv_test_`) estiver presente; caso contrário, é ignorado.
+O smoke test no sandbox roda apenas quando a variável `FLUVPAY_TEST_KEY` (prefixo `fluv_test_`) está presente. Na ausência da variável, o teste é ignorado.
 
 ## Licença
 
