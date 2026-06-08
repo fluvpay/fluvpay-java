@@ -6,6 +6,24 @@ SDK oficial da FluvPay para Java. Oferece acesso tipado a cobranças PIX, saques
 
 Requisitos: Java 11 ou superior e Maven 3.6 ou superior.
 
+### Maven Central
+
+Maven (`pom.xml`):
+
+```xml
+<dependency>
+  <groupId>com.fluvpay</groupId>
+  <artifactId>fluvpay</artifactId>
+  <version>1.0.0</version>
+</dependency>
+```
+
+Gradle:
+
+```groovy
+implementation 'com.fluvpay:fluvpay:1.0.0'
+```
+
 ### Via JitPack
 
 O JitPack compila o SDK diretamente a partir de uma tag do GitHub. A coordenada do JitPack deriva do repositório (`groupId` `com.github.fluvpay`, `artifactId` `fluvpay-java`) e difere da coordenada definitiva do Maven Central.
@@ -68,18 +86,6 @@ mvn -q install -DskipTests
 ```
 
 O artefato local fica disponível sob a coordenada `com.fluvpay:fluvpay:1.0.0` e pode ser declarado em qualquer projeto da mesma máquina:
-
-```xml
-<dependency>
-  <groupId>com.fluvpay</groupId>
-  <artifactId>fluvpay</artifactId>
-  <version>1.0.0</version>
-</dependency>
-```
-
-### Maven Central (em breve)
-
-A coordenada definitiva no Maven Central será `com.fluvpay:fluvpay`, sem o repositório adicional do JitPack:
 
 ```xml
 <dependency>
